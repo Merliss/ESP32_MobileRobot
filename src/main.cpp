@@ -660,22 +660,22 @@ void MoveLeft1(int speedM_L,int speedM_R){
       ledcWrite(3, speedM_R);
     }       
 
-char Testowa[5];
+char Position[5];
 byte pos=0;
 
 void Blutacz(void *parameters){
   while(1){
   if (SerialBT.available()){  
-    Testowa[pos] =SerialBT.read();
-    if(Testowa[pos]=='#'){
-      Testowa[pos]=0;
+    Position[pos] =SerialBT.read();
+    if(Position[pos]=='#'){
+      Position[pos]=0;
       pos=0;
     }
     else{
       if (pos<4) 
       pos++;
     }
-    Direction=Testowa[0];
+    Direction=Position[0];
   }
   vTaskDelay(30/portTICK_PERIOD_MS);
   }
@@ -714,13 +714,12 @@ void Pozycja(void *parameters){
   while(1){
     Odometry();
     z = sqrt(pow((Xg-posX),2) + pow((Yg-posY),2));
-    psi = posAngle - atan2(Yg-posY,Xg-posX);
-    //psi = atan2(Yg-posY,Xg-posX) - posAngle;
+    psi = posAngle - atan2(Yg-posY,Xg-posX); // moze byc na odwrot odejmowanie posAngle ?
     vTaskDelay(20/portTICK_PERIOD_MS);
   }
 }
 
-// ODCZYT CZUJNIKOW // ULTRASONIC
+// ODCZYT CZUJNIKOW ULTRASONIC
 void UltrasonicL(void *parameter){
   while(1){
   digitalWrite(TRIG3, LOW);
@@ -789,7 +788,7 @@ void UploadToDatabase(void *parameter){
     char posXString[8];
     char newString[10];
     dtostrf(posX, 1, 2, posXString);
-    client.publish("esp32/posX", posXString);       //BAZA DANYCH
+    client.publish("esp32/posX", posXString);       //BAZA DANYCH, publikowanie do bazy po mqtt na tematach
     char posYString[8];
     dtostrf(posY, 1, 2, posYString);
     Serial.print("Xg: ");
@@ -910,8 +909,8 @@ OldDeltaLeftCounter=0;
 
 else if (Direction == 'G') //  Ustawienie współrzędnych
     {
-    Xg=Testowa[1]-'0'; // zamiana char na float
-    Yg=Testowa[2]-'0'; // zamiana char na float
+    Xg=Position[1]-'0'; // zamiana char na float
+    Yg=Position[2]-'0'; // zamiana char na float
     }
 
 else if (Direction == 'M'){ // DO CELU
@@ -975,7 +974,7 @@ if (VelL <0 && VelR < 0)
 }
 
     
-if (z<0.08){
+if (z<0.08){ //Osiagniecie celu
 
       //Direction='S';
       ledcWrite(0, 0);
@@ -1018,7 +1017,7 @@ else if (Direction == 'L')
     }
 else if (Direction == 'D')
     {
-      //DOWN/BACK
+      //BACK (D - Down)
       
       ledcWrite(0, 250);
       ledcWrite(1, 0);
@@ -1064,7 +1063,7 @@ if (g_fisOutput[0] >0 && g_fisOutput[1] > 0)
       speedMOTOR_R=map(g_fisOutput[1],-10,0,141,250);
       MoveRight1(speedMOTOR_L,speedMOTOR_R);
       //Serial.println(speedMOTOR);
-      //Serial.println(g_fisOutput[0]);
+      //Serial.println(g_fisOutput[0]); //debug
 
     }
   }
