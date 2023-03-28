@@ -5,6 +5,14 @@
 #include <fis_header.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <U8g2lib.h>
+
+#ifdef U8X8_HAVE_HW_SPI
+#include <SPI.h>
+#endif
+#ifdef U8X8_HAVE_HW_I2C
+#include <Wire.h>
+#endif
 
 
 static TaskHandle_t task_1 = NULL;
@@ -12,6 +20,9 @@ static TaskHandle_t task_2 = NULL;
 static TaskHandle_t task_3 = NULL;
 static TaskHandle_t task_4 = NULL;
 static TaskHandle_t task_5 = NULL;
+static TaskHandle_t task_6 = NULL;
+
+
 
 
 #define SOUND_SPEED 0.034
@@ -51,21 +62,28 @@ float psi;
 float VelL;
 float VelR;
 float P=0.0;
+char posXString[8];
+char posYString[8];
+int curr_button;
+int prev_button;
+int menuPos=0;
 
-const int A1A = 12;//silnik A
-const int A1B = 13;//-.-
-const int B1A = 2;//silnikB
-const int B1B = 4;//-.-
-const int ECHO = 14;
-const int TRIG = 21;
-const int TRIG2 = 22;
-const int ECHO2 = 27;
-const int TRIG3 = 34;
-const int ECHO3 = 15;
-const int LH_ENCODER_A = 25;
-const int LH_ENCODER_B = 33;
-const int RH_ENCODER_A = 35;
-const int RH_ENCODER_B = 32;
+const uint8_t Button = 26;
+const uint8_t A1A = 12;//silnik A
+const uint8_t A1B = 13;//-.-
+const uint8_t B1A = 2;//silnikB
+const uint8_t B1B = 4;//-.-
+const uint8_t ECHO = 14;
+const uint8_t TRIG = 21;
+const uint8_t TRIG2 = 22;
+const uint8_t ECHO2 = 27;
+const uint8_t TRIG3 = 34;
+const uint8_t ECHO3 = 15;
+const uint8_t LH_ENCODER_A = 25;
+const uint8_t LH_ENCODER_B = 33;
+const uint8_t RH_ENCODER_A = 35;
+const uint8_t RH_ENCODER_B = 32;
+
 char Direction;
 long time_HC04;
 float distanceHC_CM;
@@ -76,6 +94,8 @@ float distanceHC_CM_L;
 volatile signed long counterL=0;
 volatile signed long counterR=0;
 
+U8G2_PCD8544_84X48_1_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/ 18, /* data=*/ 23, /* cs=*/ 5, /* dc=*/ 19, /* reset=*/ 17);	// Nokia 5110 Display
+//U8G2_PCD8544_84X48_1_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 19, /* reset=*/ 17);	
 BluetoothSerial SerialBT;
 
 
@@ -785,11 +805,9 @@ int iter=0;
 
 void UploadToDatabase(void *parameter){
   while(1){
-    char posXString[8];
-    char newString[10];
+    
     dtostrf(posX, 1, 2, posXString);
     client.publish("esp32/posX", posXString);       //BAZA DANYCH, publikowanie do bazy po mqtt na tematach
-    char posYString[8];
     dtostrf(posY, 1, 2, posYString);
     Serial.print("Xg: ");
     Serial.println(Xg);
@@ -797,6 +815,110 @@ void UploadToDatabase(void *parameter){
     Serial.println(Yg);
     client.publish("esp32/posY", posYString);
     vTaskDelay(500/portTICK_PERIOD_MS);
+  }
+}
+
+void DisplayMenu(void *parameter){
+  while(1){
+    curr_button=digitalRead(Button);
+
+
+if (!curr_button&&prev_button==0){
+  
+  if (menuPos==2)
+  menuPos=0;
+  else
+  menuPos++;
+  prev_button=1;					
+}
+else if (curr_button)
+{
+
+ prev_button=0;
+
+}
+
+switch (menuPos)
+{
+case 0:
+  u8g2.setFont(u8g2_font_5x8_tr); 
+  u8g2.firstPage();
+  do {
+    u8g2.setCursor(0, 8);
+    u8g2.print(F("STAN BATERII"));
+    u8g2.setCursor(0, 16);
+    u8g2.print(F("xx %"));
+    u8g2.setCursor(4, 24);
+    u8g2.print(F("--------------"));
+    u8g2.setCursor(0, 32);
+    u8g2.print(F("POBOR PRADU"));
+    u8g2.setCursor(0, 40);
+    u8g2.print(F("xx.xx A"));
+  } while ( u8g2.nextPage() );
+  break;
+
+case 1:
+  u8g2.setFont(u8g2_font_5x8_tr); 
+  u8g2.firstPage();
+  do {
+    u8g2.setCursor(0, 8);
+    u8g2.print(F("TRYB JAZDY"));
+    u8g2.setCursor(0, 16);
+    u8g2.print((Direction));
+    u8g2.setCursor(4, 24);
+    u8g2.print(F("--------------"));
+    u8g2.setCursor(0, 32);
+    u8g2.print(F("PRZEJECHANA TRASA"));
+    u8g2.setCursor(0, 40);
+    u8g2.print(((counterL+counterR)/2*distancePerCount));
+  } while ( u8g2.nextPage() );
+  break;
+
+  case 2:
+  u8g2.setFont(u8g2_font_5x8_tr); 
+  u8g2.firstPage();
+  do {
+    u8g2.setCursor(0, 8);
+    u8g2.print(F("3 EKRAN TEST"));
+    u8g2.setCursor(0, 16);
+    u8g2.print(F("TEST"));
+    u8g2.setCursor(4, 24);
+    u8g2.print(F("--------------"));
+    u8g2.setCursor(0, 32);
+    u8g2.print(F(" EKRAN 3 "));
+    u8g2.setCursor(0, 40);
+    u8g2.print(F("TEST"));
+  } while ( u8g2.nextPage() );
+  break;
+
+default:
+  break;
+}
+
+/*u8g2.setFont(u8g2_font_5x8_tr); 
+  u8g2.firstPage();
+  do {
+    u8g2.setCursor(0, 8);
+    u8g2.print(F("WCISNIETY"));
+    u8g2.setCursor(0, 16);
+    u8g2.print((posY));
+  } while ( u8g2.nextPage() );*/
+
+if (!curr_button&&prev_button==0){
+  
+  if (menuPos==2)
+  menuPos=0;
+  else
+  menuPos++;
+  prev_button=1;					
+}
+else if (curr_button)
+{
+
+prev_button=0;
+
+}
+ vTaskDelay(20/portTICK_PERIOD_MS);
   }
 }
 
@@ -820,6 +942,11 @@ void setup() {
   pinMode(LH_ENCODER_B,INPUT);
   pinMode(RH_ENCODER_A,INPUT);
   pinMode(RH_ENCODER_B,INPUT);
+  pinMode(Button,INPUT_PULLUP);
+
+  u8g2.begin();
+  u8g2.setContrast(145);
+  u8g2.setColorIndex(1);
   
   ledcSetup(0,22000,8);
   ledcSetup(1,22000,8);
@@ -874,11 +1001,20 @@ void setup() {
 
   xTaskCreate(
     UploadToDatabase, 
-    "WiFi",  
+    "Database",  
     2048,      
     NULL,       
     1,         
     &task_5     
+  );
+  
+  xTaskCreate(
+    DisplayMenu, 
+    "Display",  
+    2048,      
+    NULL,       
+    1,         
+    &task_6     
   );
 
 }
@@ -916,7 +1052,7 @@ else if (Direction == 'G') //  Ustawienie współrzędnych
 else if (Direction == 'M'){ // DO CELU
 
 
-actualTime = millis();
+//actualTime = millis();
 
     g_fisInput_G[0] = z;
     g_fisInput_G[1] = psi;
@@ -939,9 +1075,13 @@ actualTime = millis();
     VelL= (0.7-P)*g_fisOutput[0] + (P+0.3)*g_fisOutput_G[0];
     VelR= (0.7-P)*g_fisOutput[1] + (P+0.3)*g_fisOutput_G[1];
 
+  
 
-if(actualTime-lastTime >= 50UL){
-Serial.println(P);
+if(actualTime-lastTime >= 100UL){
+
+ 
+
+//Serial.println(P);
 //Serial.println(posY);   
 lastTime=actualTime;
 }
@@ -1036,6 +1176,19 @@ else if (Direction == 'S')
       delayMicroseconds(100);
     }
 
+/*
+u8g2.setFont(u8g2_font_5x8_tr); 
+  u8g2.firstPage();
+  do {
+    u8g2.setCursor(0, 8);
+    u8g2.print(F("Hello World!"));
+  } while ( u8g2.nextPage() );
+*/
+
+
+ 
+
+
 
 else if (Direction=='A')
 {
@@ -1069,6 +1222,7 @@ if (g_fisOutput[0] >0 && g_fisOutput[1] > 0)
   }
  
 }
+
 
 
 }
