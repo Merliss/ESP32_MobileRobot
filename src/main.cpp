@@ -6,13 +6,13 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <U8g2lib.h>
+#include <PCF8574.h>
+#include <Wire.h>
 
 #ifdef U8X8_HAVE_HW_SPI
 #include <SPI.h>
 #endif
-#ifdef U8X8_HAVE_HW_I2C
-#include <Wire.h>
-#endif
+
 
 
 static TaskHandle_t task_1 = NULL;
@@ -21,7 +21,6 @@ static TaskHandle_t task_3 = NULL;
 static TaskHandle_t task_4 = NULL;
 static TaskHandle_t task_5 = NULL;
 static TaskHandle_t task_6 = NULL;
-
 
 
 
@@ -68,23 +67,25 @@ int curr_button;
 int prev_button;
 int menuPos=0;
 
+
 const uint8_t Button = 26;
 const uint8_t A1A = 12;//silnik A
 const uint8_t A1B = 13;//-.-
 const uint8_t B1A = 2;//silnikB
 const uint8_t B1B = 4;//-.-
 const uint8_t ECHO = 14;
-const uint8_t TRIG = 21;
-const uint8_t TRIG2 = 22;
+const uint8_t TRIG = 22;//P0; // P0 21;
+const uint8_t TRIG2 = 21; //P1;  //P1 22;
 const uint8_t ECHO2 = 27;
-const uint8_t TRIG3 = 34;
-const uint8_t ECHO3 = 15;
+const uint8_t TRIG3 = 32;
+const uint8_t ECHO3 = 15; 
 const uint8_t LH_ENCODER_A = 25;
 const uint8_t LH_ENCODER_B = 33;
 const uint8_t RH_ENCODER_A = 35;
-const uint8_t RH_ENCODER_B = 32;
+const uint8_t RH_ENCODER_B = 34;
+const uint8_t BATTERY_ADC = 39;
 
-char Direction;
+char Direction='S';
 long time_HC04;
 float distanceHC_CM;
 long time_HC04_R;
@@ -93,17 +94,20 @@ long time_HC04_L;
 float distanceHC_CM_L;
 volatile signed long counterL=0;
 volatile signed long counterR=0;
-
+float battery_level;
+float alpha=0.01;
+float filtered_battery_level;
+int filtered_battery_level_int;
 U8G2_PCD8544_84X48_1_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/ 18, /* data=*/ 23, /* cs=*/ 5, /* dc=*/ 19, /* reset=*/ 17);	// Nokia 5110 Display
-//U8G2_PCD8544_84X48_1_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/ 5, /* dc=*/ 19, /* reset=*/ 17);	
 BluetoothSerial SerialBT;
 
+//PCF8574 pcf8574(0x27,21,22);
 
 //  SSID/Password for WiFi
 //const char* ssid = "Xiaomi_188E";
 //const char* password = "WPISAC";// CREDENTIALS
 
-const char* ssid = "PozdrawiamOsoby";
+const char* ssid = "SSID";
 const char* password = "WPISAC";// CREDENTIALS
 
 
@@ -683,7 +687,7 @@ void MoveLeft1(int speedM_L,int speedM_R){
 char Position[5];
 byte pos=0;
 
-void Blutacz(void *parameters){
+void Bluetooth(void *parameters){
   while(1){
   if (SerialBT.available()){  
     Position[pos] =SerialBT.read();
@@ -700,7 +704,6 @@ void Blutacz(void *parameters){
   vTaskDelay(30/portTICK_PERIOD_MS);
   }
 }    
-
 
 ///ODOMETRIA///
 void Odometry(){
@@ -789,14 +792,16 @@ distanceHC_CM_R =420;
 
 //////// WIFI
 
-void WiFi_con(void *parameter){
+void MQTT_con(void *parameter){
 while(1){
-  /*
+
+
+/*
 if (!client.connected()) {
     reconnect();
   }                                             //WIFI
   client.loop();
-  */
+*/
 
   vTaskDelay(70/portTICK_PERIOD_MS);
 }
@@ -809,10 +814,10 @@ void UploadToDatabase(void *parameter){
     dtostrf(posX, 1, 2, posXString);
     client.publish("esp32/posX", posXString);       //BAZA DANYCH, publikowanie do bazy po mqtt na tematach
     dtostrf(posY, 1, 2, posYString);
-    Serial.print("Xg: ");
-    Serial.println(Xg);
-    Serial.print("Yg: ");
-    Serial.println(Yg);
+    //Serial.print("Xg: ");
+    //Serial.println(Xg);
+    //Serial.print("Yg: ");
+    //Serial.println(Yg);
     client.publish("esp32/posY", posYString);
     vTaskDelay(500/portTICK_PERIOD_MS);
   }
@@ -822,10 +827,13 @@ void DisplayMenu(void *parameter){
   while(1){
     curr_button=digitalRead(Button);
 
+ battery_level= (((float)analogRead(BATTERY_ADC)-3200)/8.95)/0.97;
+ filtered_battery_level = (alpha * battery_level) + ((1 - alpha) * filtered_battery_level);
+ filtered_battery_level_int = (alpha * battery_level) + ((1 - alpha) * filtered_battery_level);
 
 if (!curr_button&&prev_button==0){
   
-  if (menuPos==2)
+  if (menuPos==3)
   menuPos=0;
   else
   menuPos++;
@@ -847,7 +855,8 @@ case 0:
     u8g2.setCursor(0, 8);
     u8g2.print(F("STAN BATERII"));
     u8g2.setCursor(0, 16);
-    u8g2.print(F("xx %"));
+    u8g2.print(filtered_battery_level_int);
+    u8g2.print(F("%"));
     u8g2.setCursor(4, 24);
     u8g2.print(F("--------------"));
     u8g2.setCursor(0, 32);
@@ -881,16 +890,70 @@ case 1:
     u8g2.setCursor(0, 8);
     u8g2.print(F("3 EKRAN TEST"));
     u8g2.setCursor(0, 16);
-    u8g2.print(F("TEST"));
+    u8g2.print(0x8b);
     u8g2.setCursor(4, 24);
     u8g2.print(F("--------------"));
     u8g2.setCursor(0, 32);
-    u8g2.print(F(" EKRAN 3 "));
+    u8g2.print((distanceHC_CM));
     u8g2.setCursor(0, 40);
-    u8g2.print(F("TEST"));
+    u8g2.print((distanceHC_CM_R));
   } while ( u8g2.nextPage() );
   break;
 
+  case 3:
+    switch (Direction)
+    {
+
+    case 'S':
+    u8g2.setFont(u8g2_font_cursor_tf); 
+    u8g2.firstPage();
+    do {
+         u8g2.drawCircle(42, 24, 20, U8G2_DRAW_ALL);
+      } while ( u8g2.nextPage() );
+      break;
+
+
+    case 'R':
+    u8g2.setFont(u8g2_font_cursor_tf); 
+    u8g2.firstPage();
+    do {
+        u8g2.drawBox(5,13,50,20);
+        u8g2.drawTriangle(55,3, 55,43, 80,23);
+      } while ( u8g2.nextPage() );
+      break;
+
+    case 'L':
+    u8g2.setFont(u8g2_font_cursor_tf); 
+    u8g2.firstPage();
+    do {
+        u8g2.drawBox(24,13,50,20); // prostokąt
+    u8g2.drawTriangle(24,3, 24,43, 1,23); // trójkąt
+      } while ( u8g2.nextPage() );
+      break;
+
+      case 'U':
+    u8g2.setFont(u8g2_font_cursor_tf); 
+    u8g2.firstPage();
+    do {
+        u8g2.drawBox(32,20,20,24);
+        u8g2.drawTriangle(22,20,62,20,42,2);
+      } while ( u8g2.nextPage() );
+      break;
+
+      case 'D':
+    u8g2.setFont(u8g2_font_cursor_tf); 
+    u8g2.firstPage();
+    do {
+         u8g2.drawBox(32,2,20,24); 
+        u8g2.drawTriangle(22,26,62,26,42,40); 
+      } while ( u8g2.nextPage() );
+      break;
+    
+    default:
+      break;
+    }
+ break;
+  
 default:
   break;
 }
@@ -927,11 +990,17 @@ prev_button=0;
 void setup() {
   Serial.begin(115200);
   SerialBT.begin("ESP32_ROBO"); //Bluetooth device name
-
+  //Wire.begin(21,22);
   pinMode(B1A,OUTPUT);// define pin as output
   pinMode(B1B,OUTPUT);
   pinMode(A1A,OUTPUT);
-  pinMode(A1B,OUTPUT);   
+  pinMode(A1B,OUTPUT); 
+    /*
+pcf8574.begin();
+pcf8574.pinMode(TRIG, OUTPUT);
+pcf8574.pinMode(TRIG2, OUTPUT);
+pcf8574.pinMode(P2, OUTPUT);
+*/
   pinMode(TRIG, OUTPUT);
   pinMode(TRIG2, OUTPUT);
   pinMode(TRIG3, OUTPUT);
@@ -943,6 +1012,7 @@ void setup() {
   pinMode(RH_ENCODER_A,INPUT);
   pinMode(RH_ENCODER_B,INPUT);
   pinMode(Button,INPUT_PULLUP);
+  pinMode(BATTERY_ADC,INPUT);
 
   u8g2.begin();
   u8g2.setContrast(145);
@@ -973,8 +1043,8 @@ void setup() {
   );
 
   xTaskCreate(
-    Blutacz,     
-    "Blutacz",    
+    Bluetooth,     
+    "Bluetooth",    
     2048,             
     NULL,            
     1,               
@@ -991,8 +1061,8 @@ void setup() {
   );
 
    xTaskCreate(
-    WiFi_con,    
-    "WiFi",   
+    MQTT_con,    
+    "MQTT",   
     2048,            
     NULL,            
     1,              
@@ -1021,6 +1091,9 @@ void setup() {
 
 void loop() {
  
+ //pcf8574.digitalWrite(P2, HIGH);
+Serial.println(distanceHC_CM_L);
+
 if (Direction == 'N') // RESET DO CELU
 {
   counterL=0;
