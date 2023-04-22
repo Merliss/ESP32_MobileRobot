@@ -637,9 +637,9 @@ void pulseR() {
 
 ///STEROWANIE///
 void MoveForward1(int speedM_L,int speedM_R){
-      if (speedM_L <=100)
+      if (speedM_L <=90)
       speedM_L=0;
-      if (speedM_R <=100)
+      if (speedM_R <=90)
       speedM_R=0;
     ledcWrite(0, 0);
     ledcWrite(1, speedM_L);
@@ -649,7 +649,7 @@ void MoveForward1(int speedM_L,int speedM_R){
 
 void MoveBackward1(int speedM){
 
-  if (speedM <=100)
+  if (speedM <=90)
   speedM=0;
     ledcWrite(0, speedM);
     ledcWrite(1, 0);
@@ -659,9 +659,9 @@ void MoveBackward1(int speedM){
 
 void MoveRight1(int speedM_L,int speedM_R){
 
-      if (speedM_L <=100)
+      if (speedM_L <=90)
       speedM_L=0;
-      if (speedM_R <=100)
+      if (speedM_R <=90)
       speedM_R=0;
       ledcWrite(0, 0);
       ledcWrite(1, speedM_L);
@@ -671,9 +671,9 @@ void MoveRight1(int speedM_L,int speedM_R){
 
 void MoveLeft1(int speedM_L,int speedM_R){
 
-      if (speedM_L <=100)
+      if (speedM_L <=90)
       speedM_L=0;
-      if (speedM_R <=100)
+      if (speedM_R <=90)
       speedM_R=0;
       ledcWrite(0, speedM_L);
       ledcWrite(1, 0);
@@ -698,7 +698,7 @@ void Bluetooth(void *parameters){
     }
     Direction=Position[0];
   }
-  vTaskDelay(30/portTICK_PERIOD_MS);
+  vTaskDelay(80/portTICK_PERIOD_MS);
   }
 }    
 
@@ -822,25 +822,21 @@ void UploadToDatabase(void *parameter){
 
 void DisplayMenu(void *parameter){
   while(1){
-    curr_button=digitalRead(Button);
 
  battery_level= (((float)analogRead(BATTERY_ADC)-3200)/8.95)/0.97;
  filtered_battery_level = (alpha * battery_level) + ((1 - alpha) * filtered_battery_level);
  filtered_battery_level_int = (alpha * battery_level) + ((1 - alpha) * filtered_battery_level);
 
+curr_button=digitalRead(Button);
 if (!curr_button&&prev_button==0){
-  
   if (menuPos==3)
   menuPos=0;
   else
   menuPos++;
   prev_button=1;					
 }
-else if (curr_button)
-{
-
+else if (curr_button){
  prev_button=0;
-
 }
 
 switch (menuPos)
@@ -885,22 +881,21 @@ case 1:
   u8g2.firstPage();
   do {
     u8g2.setCursor(0, 8);
-    u8g2.print(F("3 EKRAN TEST"));
+    u8g2.print(F("CZUJNIKI ODL."));
     u8g2.setCursor(0, 16);
-    u8g2.print(0x8b);
-    u8g2.setCursor(4, 24);
-    u8g2.print(F("--------------"));
-    u8g2.setCursor(0, 32);
+    u8g2.print(F("Lewy: "));
+    u8g2.print((distanceHC_CM_L));
+    u8g2.setCursor(0, 24);
+    u8g2.print(F("Środ.: "));
     u8g2.print((distanceHC_CM));
-    u8g2.setCursor(0, 40);
+    u8g2.setCursor(0, 32);
+    u8g2.print(F("Prawy: "));
     u8g2.print((distanceHC_CM_R));
   } while ( u8g2.nextPage() );
   break;
 
   case 3:
-    switch (Direction)
-    {
-
+    switch (Direction){
     case 'S':
     u8g2.setFont(u8g2_font_cursor_tf); 
     u8g2.firstPage();
@@ -908,7 +903,6 @@ case 1:
          u8g2.drawCircle(42, 24, 20, U8G2_DRAW_ALL);
       } while ( u8g2.nextPage() );
       break;
-
 
     case 'R':
     u8g2.setFont(u8g2_font_cursor_tf); 
@@ -924,7 +918,7 @@ case 1:
     u8g2.firstPage();
     do {
         u8g2.drawBox(24,13,50,20); // prostokąt
-    u8g2.drawTriangle(24,3, 24,43, 1,23); // trójkąt
+        u8g2.drawTriangle(24,3, 24,43, 1,23); // trójkąt
       } while ( u8g2.nextPage() );
       break;
 
@@ -941,11 +935,11 @@ case 1:
     u8g2.setFont(u8g2_font_cursor_tf); 
     u8g2.firstPage();
     do {
-         u8g2.drawBox(32,2,20,24); 
+        u8g2.drawBox(32,2,20,24); 
         u8g2.drawTriangle(22,26,62,26,42,40); 
       } while ( u8g2.nextPage() );
       break;
-    
+
     default:
       break;
     }
@@ -955,29 +949,6 @@ default:
   break;
 }
 
-/*u8g2.setFont(u8g2_font_5x8_tr); 
-  u8g2.firstPage();
-  do {
-    u8g2.setCursor(0, 8);
-    u8g2.print(F("WCISNIETY"));
-    u8g2.setCursor(0, 16);
-    u8g2.print((posY));
-  } while ( u8g2.nextPage() );*/
-
-if (!curr_button&&prev_button==0){
-  
-  if (menuPos==2)
-  menuPos=0;
-  else
-  menuPos++;
-  prev_button=1;					
-}
-else if (curr_button)
-{
-
-prev_button=0;
-
-}
  vTaskDelay(20/portTICK_PERIOD_MS);
   }
 }
@@ -992,12 +963,7 @@ void setup() {
   pinMode(B1B,OUTPUT);
   pinMode(A1A,OUTPUT);
   pinMode(A1B,OUTPUT); 
-    /*
-pcf8574.begin();
-pcf8574.pinMode(TRIG, OUTPUT);
-pcf8574.pinMode(TRIG2, OUTPUT);
-pcf8574.pinMode(P2, OUTPUT);
-*/
+  
   pinMode(TRIG, OUTPUT);
   pinMode(TRIG2, OUTPUT);
   pinMode(TRIG3, OUTPUT);
@@ -1088,7 +1054,6 @@ pcf8574.pinMode(P2, OUTPUT);
 
 void loop() {
  
- //pcf8574.digitalWrite(P2, HIGH);
 Serial.println(distanceHC_CM_L);
 
 if (Direction == 'N') // RESET DO CELU
@@ -1115,14 +1080,11 @@ OldDeltaLeftCounter=0;
 
 else if (Direction == 'G') //  Ustawienie współrzędnych
     {
-    Xg=Position[1]-'0'; // zamiana char na float
-    Yg=Position[2]-'0'; // zamiana char na float
+    Xg=Position[1]-'0';
+    Yg=Position[2]-'0'; // zamiana znaku na liczbę
     }
 
 else if (Direction == 'M'){ // DO CELU
-
-
-//actualTime = millis();
 
     g_fisInput_G[0] = z;
     g_fisInput_G[1] = psi;
@@ -1131,8 +1093,6 @@ else if (Direction == 'M'){ // DO CELU
     g_fisOutput_G[1] = 0;
 
     fis_evaluate_G();
-//lastTime = actualTime;
-
 
     P = minimum(distanceHC_CM,distanceHC_CM_L,distanceHC_CM_R)/420.0;
 
@@ -1141,28 +1101,15 @@ else if (Direction == 'M'){ // DO CELU
     if (P<-1)
     P=-1.0;
 
-
     VelL= (0.7-P)*g_fisOutput[0] + (P+0.3)*g_fisOutput_G[0];
     VelR= (0.7-P)*g_fisOutput[1] + (P+0.3)*g_fisOutput_G[1];
 
-  
-
-if(actualTime-lastTime >= 100UL){
-
- 
-
-//Serial.println(P);
-//Serial.println(posY);   
-lastTime=actualTime;
-}
 
 if (VelL >0 && VelR > 0)
     {
       speedMOTOR_L=map(VelL,0,10,140,220);
       speedMOTOR_R=map(VelR,0,10,160,250);
       MoveForward1(speedMOTOR_L,speedMOTOR_R);
-      //Serial.println(speedMOTOR);
-      //Serial.println(g_fisOutput[0]);
     }
 if (VelL<0 && VelR > 0)
     {
@@ -1246,26 +1193,10 @@ else if (Direction == 'S')
       delayMicroseconds(100);
     }
 
-/*
-u8g2.setFont(u8g2_font_5x8_tr); 
-  u8g2.firstPage();
-  do {
-    u8g2.setCursor(0, 8);
-    u8g2.print(F("Hello World!"));
-  } while ( u8g2.nextPage() );
-*/
-
-
- 
-
-
-
 else if (Direction=='A')
 {
   while(Direction=='A'){
     
-    
-  
 if (g_fisOutput[0] >0 && g_fisOutput[1] > 0)
     {
       speedMOTOR_L=map(g_fisOutput[0],1,10,141,250);
@@ -1285,8 +1216,6 @@ if (g_fisOutput[0] >0 && g_fisOutput[1] > 0)
       speedMOTOR_L=map(g_fisOutput[0],0,10,141,250);
       speedMOTOR_R=map(g_fisOutput[1],-10,0,141,250);
       MoveRight1(speedMOTOR_L,speedMOTOR_R);
-      //Serial.println(speedMOTOR);
-      //Serial.println(g_fisOutput[0]); //debug
 
     }
   }
