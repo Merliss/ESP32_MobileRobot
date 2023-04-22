@@ -6,15 +6,10 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <U8g2lib.h>
-#include <PCF8574.h>
-#include <Wire.h>
-
-#ifdef U8X8_HAVE_HW_SPI
 #include <SPI.h>
-#endif
 
 
-
+//FreeRTOS takshandle
 static TaskHandle_t task_1 = NULL;
 static TaskHandle_t task_2 = NULL;
 static TaskHandle_t task_3 = NULL;
@@ -85,7 +80,7 @@ const uint8_t RH_ENCODER_A = 35;
 const uint8_t RH_ENCODER_B = 34;
 const uint8_t BATTERY_ADC = 39;
 
-char Direction='S';
+char Direction='S'; // domyslnie zatrzymanie
 long time_HC04;
 float distanceHC_CM;
 long time_HC04_R;
@@ -112,7 +107,6 @@ const char* password = "WPISAC";// CREDENTIALS
 
 
 // MQTT Broker IP address
-//const char* mqtt_server = "broker.hivemq.com";
 const char* mqtt_server = "broker.mqttdashboard.com";
 
 WiFiClient espClient;
@@ -150,7 +144,7 @@ void reconnect() {
 }
 
 
-
+#pragma region FIS1
 // FIS WSTEPNE 
 const int fis_gcI = 3;
 // Number of outputs to the fuzzy inference system
@@ -394,7 +388,9 @@ void fis_evaluate()
     }
 }
 
+#pragma endregion
 
+#pragma region FIS2
 // Number of inputs to the fuzzy inference system
 const int fis_gcI_G = 2;
 // Number of outputs to the fuzzy inference system
@@ -603,6 +599,7 @@ float minimum(float a, float b, float c){
   return min;
 }
 
+#pragma endregion
 
 //ENKODERY
 //LEFT
