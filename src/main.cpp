@@ -38,14 +38,7 @@ float posY=0.0;
 float posAngle=0.0; //-PI //0
 int leftCounter=0;
 int rightCounter=0;
-volatile int interruptCounter;
-int totalInterruptCounter;
-volatile int interruptCounter1;
-int totalInterruptCounter1;
-volatile int interruptCounter2;
-int totalInterruptCounter2;
-volatile int interruptCounter3;
-int totalInterruptCounter3;
+
 int speedMOTOR;
 int speedMOTOR_L;
 int speedMOTOR_R;
@@ -60,7 +53,7 @@ char posXString[8];
 char posYString[8];
 int curr_button;
 int prev_button;
-int menuPos=0;
+int menuPos=3;
 
 
 const uint8_t Button = 26;
