@@ -53,7 +53,7 @@ char posXString[8];
 char posYString[8];
 int curr_button;
 int prev_button;
-int menuPos=3;
+int menuPos=4;
 
 
 const uint8_t Button = 26;
@@ -822,7 +822,7 @@ void DisplayMenu(void *parameter){
 
 curr_button=digitalRead(Button);
 if (!curr_button&&prev_button==0){
-  if (menuPos==3)
+  if (menuPos==4)
   menuPos=0;
   else
   menuPos++;
@@ -879,7 +879,7 @@ case 1:
     u8g2.print(F("Lewy: "));
     u8g2.print((distanceHC_CM_L));
     u8g2.setCursor(0, 24);
-    u8g2.print(F("Środ.: "));
+    u8g2.print(F("Srodek: "));
     u8g2.print((distanceHC_CM));
     u8g2.setCursor(0, 32);
     u8g2.print(F("Prawy: "));
@@ -888,6 +888,21 @@ case 1:
   break;
 
   case 3:
+  u8g2.setFont(u8g2_font_5x8_tr); 
+  u8g2.firstPage();
+  do {
+    u8g2.setCursor(0, 8);
+    u8g2.print(F("ODEBRANE WSP."));
+    u8g2.setCursor(0, 16);
+    u8g2.print(F("X: "));
+    u8g2.print((Xg));
+    u8g2.setCursor(0, 24);
+    u8g2.print(F("Y: "));
+    u8g2.print((Yg));
+  } while ( u8g2.nextPage() );
+  break;
+
+  case 4:
     switch (Direction){
     case 'S':
     u8g2.setFont(u8g2_font_cursor_tf); 
@@ -930,6 +945,22 @@ case 1:
     do {
         u8g2.drawBox(32,2,20,24); 
         u8g2.drawTriangle(22,26,62,26,42,40); 
+      } while ( u8g2.nextPage() );
+      break;
+
+      case 'A':
+    u8g2.setFont(u8g2_font_fub35_tf); 
+    u8g2.firstPage();
+    do {
+        u8g2.drawGlyph(25, 38, 'A');
+      } while ( u8g2.nextPage() );
+      break;
+
+      case 'M':
+    u8g2.setFont(u8g2_font_fub35_tf); 
+    u8g2.firstPage();
+    do {
+        u8g2.drawGlyph(25, 38, 'G');
       } while ( u8g2.nextPage() );
       break;
 
@@ -1067,6 +1098,9 @@ deltaAngle = 0;
 posAngle =0; //-PI;
 OldDeltaRightCounter=0;
 OldDeltaLeftCounter=0;
+Xg=0;
+Yg=0;
+Direction = 'S';
 }
 
 
