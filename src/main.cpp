@@ -7,6 +7,8 @@
 #include <PubSubClient.h>
 #include <U8g2lib.h>
 #include <SPI.h>
+#include "DHT.h"
+#include "ArduinoJson.h"
 
 
 //FreeRTOS takshandle
@@ -88,6 +90,7 @@ float filtered_battery_level;
 int filtered_battery_level_int;
 U8G2_PCD8544_84X48_1_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/ 18, /* data=*/ 23, /* cs=*/ 5, /* dc=*/ 19, /* reset=*/ 17);	// Nokia 5110 Display
 BluetoothSerial SerialBT;
+StaticJsonDocument<200> jsonBuffer; //rozmiar bufora json
 
 //PCF8574 pcf8574(0x27,21,22);
 
@@ -824,14 +827,22 @@ int iter=0;
 void UploadToDatabase(void *parameter){
   while(1){
     
+    JsonObject jsonData = jsonBuffer.to<JsonObject>();
+
     dtostrf(posX, 1, 2, posXString);
-    client.publish("iiot/esp32/posX", posXString);       //BAZA DANYCH, publikowanie do bazy po mqtt na tematach
     dtostrf(posY, 1, 2, posYString);
-    //Serial.print("Xg: ");
-    //Serial.println(Xg);
-    //Serial.print("Yg: ");
-    //Serial.println(Yg);
-    client.publish("iiot/esp32/posY", posYString);
+
+    jsonData["posX"] = posXString;
+    jsonData["posY"] = posYString;
+    jsonData["timestamp"] = millis();
+
+    String jsonString;
+    serializeJson(jsonData, jsonString);
+
+    client.publish("iiot/esp32/data", jsonString.c_str());
+
+
+    //client.publish("iiot/esp32/posY", posYString);
     vTaskDelay(1000/portTICK_PERIOD_MS);
   }
 }
