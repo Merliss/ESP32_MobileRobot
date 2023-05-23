@@ -100,7 +100,7 @@ const char* password = "grzesiekkaniadorwaldrania";// CREDENTIALS
 
 
 // MQTT Broker IP address
-const char* mqtt_server = "broker.mqttdashboard.com";
+const char* mqtt_server = "broker.hivemq.com";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -111,27 +111,49 @@ int value = 0;
  // MODUL WIFI
 void setup_wifi() {
   delay(10);
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
   WiFi.begin(ssid, password);
-  for( int i=0; ((WiFi.status() != WL_CONNECTED) || (i<10)); i++) {
-    delay(300);
-    Serial.print(".");
+  for( int i=0; ((WiFi.status() != WL_CONNECTED) && (i<20)); i++) {
+    delay(400);
+    u8g2.setFont(u8g2_font_5x8_tr); 
+  u8g2.firstPage();
+  do {
+    u8g2.setCursor(0, 8);
+    u8g2.print(F("Laczenie z siecia..."));
+    u8g2.setCursor(0+i, 12);
+    u8g2.print(F("."));
+  } while ( u8g2.nextPage() );
   }
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
+  if (WiFi.status() == WL_CONNECTED) {
+    u8g2.setFont(u8g2_font_5x8_tr);
+  u8g2.firstPage();
+  do {
+    u8g2.setCursor(0, 8);
+    u8g2.print(F("Polaczono!"));
+    u8g2.setCursor(0, 16);
+    u8g2.print(F("IP: "));
+    u8g2.setCursor(0, 24);
+    u8g2.print(WiFi.localIP());
+  } while ( u8g2.nextPage() );
+  }
+  if (WiFi.status() != WL_CONNECTED){
+    u8g2.firstPage();
+  do {
+    u8g2.setCursor(0, 8);
+    u8g2.print(F("Brak polaczenia!"));
+    u8g2.setCursor(0, 16);
+    u8g2.print(F("Probuj ponownie!"));
+  } while ( u8g2.nextPage() );
+  }
+  delay(5000);
 }
 
 void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    if (client.connect("ESP32-ROBO","WPISAC","WPISAC")) { // CREDENTIALS
+    if (client.connect("ESP32-ROBO", "DarekMaciborek","Samo12broker")) { // CREDENTIALS
       Serial.println("connected");
     } else {
-      delay(800); // default 1000
+      Serial.println("disconnected");
     }
   }
 }
@@ -786,16 +808,17 @@ void MQTT_con(void *parameter){
 while(1){
 
 
-/*
+
 if (!client.connected()) {
     reconnect();
-  }                                             //WIFI
+  }                                             //MQTT
   client.loop();
-*/
 
-  vTaskDelay(70/portTICK_PERIOD_MS);
+
+  vTaskDelay(1000/portTICK_PERIOD_MS);
 }
 }
+
 int iter=0;
 
 void UploadToDatabase(void *parameter){
