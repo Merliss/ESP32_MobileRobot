@@ -92,11 +92,11 @@ BluetoothSerial SerialBT;
 //PCF8574 pcf8574(0x27,21,22);
 
 //  SSID/Password for WiFi
-//const char* ssid = "Xiaomi_188E";
-//const char* password = "WPISAC";// CREDENTIALS
+const char* ssid = "Xiaomi_188E";
+const char* password = "grzesiekkaniadorwaldrania";// CREDENTIALS
 
-const char* ssid = "SSID";
-const char* password = "WPISAC";// CREDENTIALS
+//const char* ssid = "SSID";
+//const char* password = "WPISAC";// CREDENTIALS
 
 
 // MQTT Broker IP address
@@ -115,8 +115,8 @@ void setup_wifi() {
   Serial.print("Connecting to ");
   Serial.println(ssid);
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+  for( int i=0; ((WiFi.status() != WL_CONNECTED) || (i<10)); i++) {
+    delay(300);
     Serial.print(".");
   }
   Serial.println("");
@@ -802,13 +802,13 @@ void UploadToDatabase(void *parameter){
   while(1){
     
     dtostrf(posX, 1, 2, posXString);
-    client.publish("esp32/posX", posXString);       //BAZA DANYCH, publikowanie do bazy po mqtt na tematach
+    client.publish("iiot/esp32/posX", posXString);       //BAZA DANYCH, publikowanie do bazy po mqtt na tematach
     dtostrf(posY, 1, 2, posYString);
     //Serial.print("Xg: ");
     //Serial.println(Xg);
     //Serial.print("Yg: ");
     //Serial.println(Yg);
-    client.publish("esp32/posY", posYString);
+    client.publish("iiot/esp32/posY", posYString);
     vTaskDelay(500/portTICK_PERIOD_MS);
   }
 }
@@ -822,7 +822,7 @@ void DisplayMenu(void *parameter){
 
 curr_button=digitalRead(Button);
 if (!curr_button&&prev_button==0){
-  if (menuPos==4)
+  if (menuPos==5)
   menuPos=0;
   else
   menuPos++;
@@ -978,6 +978,23 @@ case 1:
     if (Direction=='R'||Direction=='L'||Direction=='G'||Direction=='A'||Direction=='U'||Direction=='D')
   menuPos=4;
  break;
+
+case 5:
+  u8g2.setFont(u8g2_font_5x8_tr); 
+  u8g2.firstPage();
+  do {
+    u8g2.setCursor(0, 8);
+    u8g2.print(F("TRASA"));
+    u8g2.setCursor(0, 16);
+    u8g2.print(F("X: "));
+    u8g2.print((posX));
+    u8g2.setCursor(0, 24);
+    u8g2.print(F("Y: "));
+    u8g2.print((posY));
+    u8g2.setCursor(0, 32);
+    u8g2.print(F("Prawy: "));
+  } while ( u8g2.nextPage() );
+  break;
   
 default:
   break;
@@ -1026,7 +1043,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(25),pulseL,CHANGE);
   attachInterrupt(digitalPinToInterrupt(35),pulseR,CHANGE);
 
-  //setup_wifi();
+  setup_wifi();
   client.setServer(mqtt_server, 1883);
 
 
