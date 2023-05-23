@@ -832,7 +832,7 @@ void UploadToDatabase(void *parameter){
     //Serial.print("Yg: ");
     //Serial.println(Yg);
     client.publish("iiot/esp32/posY", posYString);
-    vTaskDelay(500/portTICK_PERIOD_MS);
+    vTaskDelay(1000/portTICK_PERIOD_MS);
   }
 }
 
