@@ -850,6 +850,8 @@ case 0:
     u8g2.setCursor(0, 40);
     u8g2.print(F("xx.xx A"));
   } while ( u8g2.nextPage() );
+  if (Direction=='R'||Direction=='L'||Direction=='G'||Direction=='A'||Direction=='U'||Direction=='D')
+  menuPos=4;
   break;
 
 case 1:
@@ -867,6 +869,8 @@ case 1:
     u8g2.setCursor(0, 40);
     u8g2.print(((counterL+counterR)/2*distancePerCount));
   } while ( u8g2.nextPage() );
+  if (Direction=='R'||Direction=='L'||Direction=='G'||Direction=='A'||Direction=='U'||Direction=='D')
+  menuPos=4;
   break;
 
   case 2:
@@ -885,6 +889,8 @@ case 1:
     u8g2.print(F("Prawy: "));
     u8g2.print((distanceHC_CM_R));
   } while ( u8g2.nextPage() );
+  if (Direction=='R'||Direction=='L'||Direction=='G'||Direction=='A'||Direction=='U'||Direction=='D')
+  menuPos=4;
   break;
 
   case 3:
@@ -900,6 +906,8 @@ case 1:
     u8g2.print(F("Y: "));
     u8g2.print((Yg));
   } while ( u8g2.nextPage() );
+  if (Direction=='R'||Direction=='L'||Direction=='G'||Direction=='A'||Direction=='U'||Direction=='D')
+  menuPos=4;
   break;
 
   case 4:
@@ -967,6 +975,8 @@ case 1:
     default:
       break;
     }
+    if (Direction=='R'||Direction=='L'||Direction=='G'||Direction=='A'||Direction=='U'||Direction=='D')
+  menuPos=4;
  break;
   
 default:
