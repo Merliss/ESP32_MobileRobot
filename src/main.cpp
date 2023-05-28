@@ -7,8 +7,10 @@
 #include <PubSubClient.h>
 #include <U8g2lib.h>
 #include <SPI.h>
+#include <Adafruit_Sensor.h>
 #include "DHT.h"
 #include "ArduinoJson.h"
+
 
 
 //FreeRTOS takshandle
@@ -18,7 +20,7 @@ static TaskHandle_t task_3 = NULL;
 static TaskHandle_t task_4 = NULL;
 static TaskHandle_t task_5 = NULL;
 static TaskHandle_t task_6 = NULL;
-
+static TaskHandle_t task_7 = NULL;
 
 
 #define SOUND_SPEED 0.034
@@ -63,7 +65,7 @@ const uint8_t A1A = 12;//silnik A
 const uint8_t A1B = 13;//-.-
 const uint8_t B1A = 2;//silnikB
 const uint8_t B1B = 4;//-.-
-const uint8_t ECHO = 14;
+const uint8_t ECHO = 36;
 const uint8_t TRIG = 22;//P0; // P0 21;
 const uint8_t TRIG2 = 21; //P1;  //P1 22;
 const uint8_t ECHO2 = 27;
@@ -74,6 +76,7 @@ const uint8_t LH_ENCODER_B = 33;
 const uint8_t RH_ENCODER_A = 35;
 const uint8_t RH_ENCODER_B = 34;
 const uint8_t BATTERY_ADC = 39;
+const uint8_t DHTPIN = 14;
 
 char Direction='S'; // domyslnie zatrzymanie
 long time_HC04;
@@ -84,6 +87,10 @@ long time_HC04_L;
 float distanceHC_CM_L;
 volatile signed long counterL=0;
 volatile signed long counterR=0;
+float temperature;
+float humidity;
+float b_temperature; //zapasowe
+float b_humidity;
 float battery_level;
 float alpha=0.01;
 float filtered_battery_level;
@@ -91,6 +98,9 @@ int filtered_battery_level_int;
 U8G2_PCD8544_84X48_1_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/ 18, /* data=*/ 23, /* cs=*/ 5, /* dc=*/ 19, /* reset=*/ 17);	// Nokia 5110 Display
 BluetoothSerial SerialBT;
 StaticJsonDocument<200> jsonBuffer; //rozmiar bufora json
+DHT dht(DHTPIN, DHT11);
+
+
 
 //PCF8574 pcf8574(0x27,21,22);
 
@@ -100,6 +110,11 @@ const char* password = "grzesiekkaniadorwaldrania";// CREDENTIALS
 
 //const char* ssid = "SSID";
 //const char* password = "WPISAC";// CREDENTIALS
+
+//const char* ssid = "HotSzprot";
+//const char* password = "bulki123lub2";// CREDENTIALS
+
+
 
 
 // MQTT Broker IP address
@@ -720,6 +735,34 @@ void Bluetooth(void *parameters){
   }
 }    
 
+
+void TemperatureHumidity(void *parameters){
+  while(1){
+    
+    temperature = dht.readTemperature();
+    humidity = dht.readHumidity();
+
+    if (!isnan(temperature)){
+    b_temperature = temperature;
+    }
+    else if (isnan(temperature)){
+    temperature = b_temperature;
+    }
+    
+    if (!isnan(humidity)){
+    b_humidity = humidity;
+    }
+    else if (isnan(humidity)){
+    humidity = b_humidity;
+    }
+
+ 
+  
+  vTaskDelay(5000/portTICK_PERIOD_MS);
+  }
+}
+
+
 ///ODOMETRIA///
 void Odometry(){
 leftCounter=counterL;
@@ -810,11 +853,9 @@ distanceHC_CM_R =420;
 void MQTT_con(void *parameter){
 while(1){
 
-
-
 if (!client.connected()) {
     reconnect();
-  }                                             //MQTT
+  }                                       //MQTT
   client.loop();
 
 
@@ -854,9 +895,11 @@ void DisplayMenu(void *parameter){
  filtered_battery_level = (alpha * battery_level) + ((1 - alpha) * filtered_battery_level);
  filtered_battery_level_int = (alpha * battery_level) + ((1 - alpha) * filtered_battery_level);
 
+
+
 curr_button=digitalRead(Button);
 if (!curr_button&&prev_button==0){
-  if (menuPos==5)
+  if (menuPos==6)
   menuPos=0;
   else
   menuPos++;
@@ -1025,8 +1068,23 @@ case 5:
     u8g2.setCursor(0, 24);
     u8g2.print(F("Y: "));
     u8g2.print((posY));
-    u8g2.setCursor(0, 32);
-    u8g2.print(F("Prawy: "));
+  } while ( u8g2.nextPage() );
+  break;
+
+case 6:
+  u8g2.setFont(u8g2_font_5x8_tr); 
+  u8g2.firstPage();
+  do {
+    u8g2.setCursor(0, 8);
+    u8g2.print(F("Temp i wilg."));
+    u8g2.setCursor(0, 16);
+    u8g2.print(F("Temp: "));
+    u8g2.print((temperature));
+    u8g2.print(F(" *C"));
+    u8g2.setCursor(0, 24);
+    u8g2.print(F("Wilg: "));
+    u8g2.print((humidity));
+    u8g2.print(F(" %"));
   } while ( u8g2.nextPage() );
   break;
   
@@ -1061,7 +1119,11 @@ void setup() {
   pinMode(RH_ENCODER_B,INPUT);
   pinMode(Button,INPUT_PULLUP);
   pinMode(BATTERY_ADC,INPUT);
-
+  dht.begin();
+  delay(2000);
+  temperature = dht.readTemperature();
+  humidity = dht.readHumidity(); //pierwszy pomiar
+  delay(2000);
   u8g2.begin();
   u8g2.setContrast(145);
   u8g2.setColorIndex(1);
@@ -1135,11 +1197,22 @@ void setup() {
     &task_6     
   );
 
+  xTaskCreate(
+    TemperatureHumidity, 
+    "Temperature",  
+    2048,      
+    NULL,       
+    1,         
+    &task_7     
+  );
+
 }
 
 void loop() {
- 
-Serial.println(distanceHC_CM_L);
+
+
+
+//Serial.println(temperature);
 
 if (Direction == 'N') // RESET DO CELU
 {
