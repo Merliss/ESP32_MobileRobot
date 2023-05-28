@@ -748,7 +748,7 @@ void TemperatureHumidity(void *parameters){
     else if (isnan(temperature)){
     temperature = b_temperature;
     }
-    
+
     if (!isnan(humidity)){
     b_humidity = humidity;
     }
@@ -876,6 +876,8 @@ void UploadToDatabase(void *parameter){
     jsonData["posX"] = posXString;
     jsonData["posY"] = posYString;
     jsonData["timestamp"] = millis();
+    jsonData["temperature"] = temperature;
+    jsonData["humidity"] = humidity;
 
     String jsonString;
     serializeJson(jsonData, jsonString);
