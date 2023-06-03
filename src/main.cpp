@@ -758,7 +758,7 @@ void TemperatureHumidity(void *parameters){
 
  
   
-  vTaskDelay(5000/portTICK_PERIOD_MS);
+  vTaskDelay(2000/portTICK_PERIOD_MS);
   }
 }
 
@@ -875,9 +875,10 @@ void UploadToDatabase(void *parameter){
 
     jsonData["posX"] = posXString;
     jsonData["posY"] = posYString;
-    jsonData["timestamp"] = millis();
+    jsonData["timestamp"] = millis()/60000;
     jsonData["temperature"] = temperature;
     jsonData["humidity"] = humidity;
+    jsonData["battery"] = filtered_battery_level_int;
 
     String jsonString;
     serializeJson(jsonData, jsonString);
@@ -1208,6 +1209,7 @@ void setup() {
     &task_7     
   );
 
+
 }
 
 void loop() {
@@ -1384,7 +1386,5 @@ if (g_fisOutput[0] >0 && g_fisOutput[1] > 0)
   }
  
 }
-
-
 
 }
