@@ -21,6 +21,7 @@ static TaskHandle_t task_4 = NULL;
 static TaskHandle_t task_5 = NULL;
 static TaskHandle_t task_6 = NULL;
 static TaskHandle_t task_7 = NULL;
+static TaskHandle_t task_8 = NULL;
 
 
 #define SOUND_SPEED 0.034
@@ -735,7 +736,6 @@ void Bluetooth(void *parameters){
   }
 }    
 
-
 void TemperatureHumidity(void *parameters){
   while(1){
     
@@ -748,20 +748,17 @@ void TemperatureHumidity(void *parameters){
     else if (isnan(temperature)){
     temperature = b_temperature;
     }
-
     if (!isnan(humidity)){
     b_humidity = humidity;
     }
     else if (isnan(humidity)){
     humidity = b_humidity;
     }
-
  
   
-  vTaskDelay(2000/portTICK_PERIOD_MS);
+  vTaskDelay(4000/portTICK_PERIOD_MS);
   }
 }
-
 
 ///ODOMETRIA///
 void Odometry(){
@@ -879,7 +876,8 @@ void UploadToDatabase(void *parameter){
     jsonData["temperature"] = temperature;
     jsonData["humidity"] = humidity;
     jsonData["battery"] = filtered_battery_level_int;
-
+    jsonData["counterL"] = counterL;
+    jsonData["counterR"] = counterR;
     String jsonString;
     serializeJson(jsonData, jsonString);
 
@@ -890,6 +888,21 @@ void UploadToDatabase(void *parameter){
     vTaskDelay(1000/portTICK_PERIOD_MS);
   }
 }
+
+void callback(char* topic, byte* message, unsigned int length) {
+  
+  Direction = (char)message[0];
+}
+
+void ReadFromMQTT(void *parameter){
+  while(1){
+    
+
+    client.subscribe("iiot/device/control");
+    vTaskDelay(1000/portTICK_PERIOD_MS);
+}
+}
+
 
 void DisplayMenu(void *parameter){
   while(1){
@@ -902,7 +915,7 @@ void DisplayMenu(void *parameter){
 
 curr_button=digitalRead(Button);
 if (!curr_button&&prev_button==0){
-  if (menuPos==6)
+  if (menuPos==7)
   menuPos=0;
   else
   menuPos++;
@@ -1090,6 +1103,25 @@ case 6:
     u8g2.print(F(" %"));
   } while ( u8g2.nextPage() );
   break;
+
+
+case 7:
+  u8g2.setFont(u8g2_font_5x8_tr); 
+  u8g2.firstPage();
+  do {
+    u8g2.setCursor(0, 8);
+    u8g2.print(F("REMOTE STATUS"));
+    u8g2.setCursor(0, 16);
+    u8g2.print(F("WiFi: "));
+    u8g2.print(((WiFi.status()==WL_CONNECTED)? "OK" : "OFFLINE"));
+    u8g2.setCursor(0, 24);
+    u8g2.print(F("MQTT:"));
+    u8g2.print((client.connected()? "OK" : "OFFLINE"));
+    u8g2.setCursor(0, 32);
+    u8g2.print(F("BT:"));
+    u8g2.print((SerialBT.hasClient()? "OK" : "OFFLINE"));
+  } while ( u8g2.nextPage() );
+  break;
   
 default:
   break;
@@ -1104,7 +1136,6 @@ default:
 void setup() {
   Serial.begin(115200);
   SerialBT.begin("ESP32_ROBO"); //Bluetooth device name
-  //Wire.begin(21,22);
   pinMode(B1A,OUTPUT);// define pin as output
   pinMode(B1B,OUTPUT);
   pinMode(A1A,OUTPUT);
@@ -1144,6 +1175,7 @@ void setup() {
 
   setup_wifi();
   client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
 
 
   xTaskCreate(
@@ -1207,6 +1239,15 @@ void setup() {
     NULL,       
     1,         
     &task_7     
+  );
+
+  xTaskCreate(
+    ReadFromMQTT, 
+    "MQTT_Read",  
+    2048,      
+    NULL,       
+    1,         
+    &task_8  
   );
 
 
