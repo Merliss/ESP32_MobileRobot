@@ -107,7 +107,7 @@ DHT dht(DHTPIN, DHT11);
 
 //  SSID/Password for WiFi
 const char* ssid = "Xiaomi_188E";
-const char* password = "grzesiekkaniadorwaldrania";// CREDENTIALS
+const char* password = "pass";// CREDENTIALS
 
 //const char* ssid = "SSID";
 //const char* password = "WPISAC";// CREDENTIALS
