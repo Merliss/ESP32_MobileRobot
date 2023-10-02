@@ -1,4 +1,8 @@
 # ESP32_MobileRobot
-Mobile robot with auto and manual mode
-.
-...
+The robot, with the help of its sensors, has the ability to independently detect obstacles and then avoid them. Another functionality will be autonomous driving to a point set by the user, at which point the robot is to stop. The control is carried out through a mobile application made for Android phones, which will transmit the appropriate commands to the ESP32, which already directly controls the robot. The user can choose to move manually using commands to turn in the appropriate directions as well as move forward and backward. In addition, it has the option of selecting autonomous mode and driving to a designated destination by transmitting the coordinates and selecting the appropriate command. All messages are transmitted via Bluetooth protocol. The robot also has a monographic display with a resolution of 84x48 pixels. The display provides service information as well as information about the direction of movement in manual mode. Changing the screens on which individual information is displayed by pressing the button, which is located on the board on the power cell pack. The robot has one axis, and one free wheel. The two wheels are driven by DC motors. As The power supply uses 3 18650 cells.
+![obraz](https://github.com/Merliss/ESP32_MobileRobot/assets/62032793/acd08af4-788e-46b4-a81a-696abc55150b)
+![obraz](https://github.com/Merliss/ESP32_MobileRobot/assets/62032793/71b2feb4-79f3-42ee-9beb-62d9a5333f52)
+![obraz](https://github.com/Merliss/ESP32_MobileRobot/assets/62032793/251dcb90-9abe-4b22-8cb7-7740455f36d1)
+![obraz](https://github.com/Merliss/ESP32_MobileRobot/assets/62032793/599cc5e4-2f06-4595-8a8c-0feff9082d71)
+![obraz](https://github.com/Merliss/ESP32_MobileRobot/assets/62032793/7eda4a3f-af62-47f8-84f0-76c07124e9f4)
+
